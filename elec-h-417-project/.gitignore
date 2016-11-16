@@ -1,0 +1,7 @@
+.DS_STORE
+chunks/*/*
+config/*
+files/*
+!*/*/.gitkeep
+!*/.gitkeep
+!config/peers.ini
