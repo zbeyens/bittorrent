@@ -1,57 +1,57 @@
 import socket
-import select
 import sys
+import threading
 
-# EXAMPLE OF SERVER
+# EXAMPLE OF MULTITHREADED SERVER
 
 # to test a client connect:
 # telnet localhost 8001
 
-# List to keep track of socket descriptors
-SOCKETS = []
-RECV_BUFFER = 4096  # Advisable to keep it as an exponent of 2
+RECV_BUFFER = 1024  # Advisable to keep it as an exponent of 2
 HOST = ''
-PORT = 8001  # Arbitrary non-privileged port
-
-socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-socket_server.bind((HOST, PORT))
-socket_server.listen(10)
-
-# Add server socket to the list of readable connections
-SOCKETS.append(socket_server)
-print('Socket now listening')
+PORT = 8001
 
 
-while 1:
-    # NOT USING ACCEPT BECAUSE IT'S A BLOCKING CALL:
-    # conn, addr = s.accept()
+class Server:
 
-    # Get the list sockets which are readable
-    # select wait for I/O efficiently (non-blocking)
-    read_sockets, write_sockets, error_sockets = select.select(
-        SOCKETS, [], [])
+    def __init__(self):
 
-    for sock in read_sockets:
-        # New connection
-        if sock == socket_server:
-            # Handle the case in which there is a new connection recieved
-            # through socket_server
-            sockfd, addr = socket_server.accept()
-            SOCKETS.append(sockfd)
-            print('Client connected with ' + addr[0] + ':' + str(addr[1]))
-        # Some incoming message from a client
-        else:
-            # Data recieved from client, process it
-            data = sock.recv(RECV_BUFFER).decode()
+        self.host = HOST
+        self.port = PORT
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Include IP headers
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((self.host, self.port))
+        self.listen()
+
+    def listen(self):
+        print('Listening on port', PORT)
+        self.sock.listen(10)
+        while True:
+            client, address = self.sock.accept()
+            print('Client connected with ' +
+                  address[0] + ':' + str(address[1]))
+            # timeout after 60 seconds of inactivity
+            client.settimeout(60)
+            threading.Thread(target=self.listenToClient,
+                             args=(client, address)).start()
+
+    def listenToClient(self, client, address):
+        while True:
+            data = client.recv(RECV_BUFFER).decode()
             if data:
-                print(data)
-                sock.send('ACK'.encode())
+                print(data, 'received by Client',
+                      address[0] + ':' + str(address[1]))
+                # Set the response to echo back the recieved data
+                response = data
+                client.send(response.encode())
             else:
                 # if recv() returned NULL, that usually means the sender wants
                 # to close the socket.
                 print('Client disconnected with ' +
-                      addr[0] + ':' + str(addr[1]))
-                sock.close()
-                SOCKETS.remove(sock)
+                      address[0] + ':' + str(address[1]))
+                client.close()
+                return False
 
-s.close()
+if __name__ == '__main__':
+    Server()
