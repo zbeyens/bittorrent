@@ -1,6 +1,9 @@
 import socket
+from struct import *
 import sys
 import threading
+from packets import *
+from cfg import *
 
 # EXAMPLE OF MULTITHREADED SERVER
 
@@ -25,6 +28,7 @@ class Server:
         self.listen()
 
     def listen(self):
+        self.Packets = Packets()
         print('Listening on port', PORT)
         self.sock.listen(10)
         while True:
@@ -38,16 +42,16 @@ class Server:
 
     def listenToClient(self, client, address):
         while True:
-            data = client.recv(RECV_BUFFER).decode()
-            if data:
-                print(data, 'received by Client',
-                      address[0] + ':' + str(address[1]))
-                # Set the response to echo back the recieved data
-                response = data
-                client.send(response.encode())
+            msg_header = client.recv(4)
+            if msg_header:
+                # test
+                msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
+                    client, msg_header)
+
+                # test, should send GET_CHUNK
+                self.Packets.send(client, version, GET_CHUNK,
+                                  msg_length, msg_body.encode())
             else:
-                # if recv() returned NULL, that usually means the sender wants
-                # to close the socket.
                 print('Client disconnected with ' +
                       address[0] + ':' + str(address[1]))
                 client.close()
