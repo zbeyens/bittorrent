@@ -35,8 +35,8 @@ class Tracker:
             self.chunks_peers[id_chunk_peer] = list_peers
 
     def create_socket(self):
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def bind(self, host, port):
-        self.s.bind((host, self.port_peers['tracker'][1]))
+    def bind(self):
+        self.sock.bind(('', self.port_peers['tracker'][1]))
 
