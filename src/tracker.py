@@ -12,11 +12,14 @@ class Tracker:
         self.read_config_chunks()
 
     def read_config_peers(self):
-        config = configparser.ConfigParser()
-        config.read(peers_path)
-        self.ip_address = config.get('tracker', 'ip_address')
-        self.port_number = config.getint('tracker', 'port_number')
-
+        config_p = configparser.ConfigParser()
+        config_p.read(peers_path)
+        self.ports_peers = {}
+        self.ip_address_peers = {}
+        for each_section in config_p.sections():
+            p = config_p.getint(each_section,'port_number')
+            i = config_p.get(each_section,'ip_address')
+            self.ip_address_peers[each_section] = (i, p)
     def read_config_chunks(self):
         self.chunks = {}
         self.chunks_peers = {}
@@ -30,7 +33,10 @@ class Tracker:
             id_chunk_peer = int(id_chunk_peer)
             list_peers = peers.split(',')
             self.chunks_peers[id_chunk_peer] = list_peers
-    """
-    def listen(self):
-    """
+
+    def create_socket(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    def bind(self, host, port):
+        self.s.bind((host, self.port_peers['tracker'][1]))
 
