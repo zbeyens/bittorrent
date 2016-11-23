@@ -18,17 +18,19 @@ class Tracker:
         self.port_number = config.getint('tracker', 'port_number')
 
     def read_config_chunks(self):
-        self.chunks = []
-        self.chunks_peers = []
+        self.chunks = {}
+        self.chunks_peers = {}
         config = configparser.ConfigParser()
         config.read(chunks_path)
         #chunks_number = config.getint('Description','chunks_count')
         for (id_chunk, chunk_hash) in config.items('chunks'):
             id_chunk = int(id_chunk)
-            self.chunks.append(id_chunk, chunk_hash)
+            self.chunks[id_chunk]=chunk_hash
         for (id_chunk_peer, peers) in config.items('chunks_peer'):
             id_chunk_peer = int(id_chunk_peer)
             list_peers = peers.split(',')
-            self.chunks_peers.append(id_chunk_peer, list_peers)
-
+            self.chunks_peers[id_chunk_peer] = list_peers
+    """
+    def listen(self):
+    """
 
