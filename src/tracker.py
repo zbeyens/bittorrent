@@ -8,8 +8,6 @@ from lib.cfg import *
 class Tracker:
 
     def __init__(self):
-        self.chunks = []
-        self.chunks_peers = []
         self.read_config_peers()
         self.read_config_chunks()
 
@@ -20,6 +18,8 @@ class Tracker:
         self.port_number = config.getint('tracker', 'port_number')
 
     def read_config_chunks(self):
+        self.chunks = []
+        self.chunks_peers = []
         config = configparser.ConfigParser()
         config.read(chunks_path)
         #chunks_number = config.getint('Description','chunks_count')
