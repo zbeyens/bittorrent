@@ -8,6 +8,8 @@ from lib.cfg import *
 class Tracker:
 
     def __init__(self):
+        self.chunks = []
+        self.chunks_peers = []
         self.read_config_peers()
         self.read_config_chunks()
 
@@ -21,14 +23,12 @@ class Tracker:
         config = configparser.ConfigParser()
         config.read(chunks_path)
         #chunks_number = config.getint('Description','chunks_count')
-        self.chunks = []
-        self.chunks_peer = []
-        for (id,chunk_hash) in config.items('chunks'):
-            id=int(id)
-            self.chunks.append(id, chunk_hash)
-        for (id, peers) in config.items('chunks_peer'):
-            id = int(id)
-            list_peer = peers.split(',')
-            self.chunks_peer.append(id, list_peer)
+        for (id_chunk, chunk_hash) in config.items('chunks'):
+            id_chunk = int(id_chunk)
+            self.chunks.append(id_chunk, chunk_hash)
+        for (id_chunk_peer, peers) in config.items('chunks_peer'):
+            id_chunk_peer = int(id_chunk_peer)
+            list_peers = peers.split(',')
+            self.chunks_peers.append(id_chunk_peer, list_peers)
 
 
