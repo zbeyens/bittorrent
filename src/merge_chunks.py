@@ -6,8 +6,10 @@ root_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 chunks_path = os.path.join(root_path, 'chunks')
 config_path = os.path.join(root_path, 'config')
 
+
 def chunk_path(chunk_hash):
     return os.path.join(chunks_path, 'charlie', chunk_hash + '.bin')
+
 
 class MergeChunks:
     def __init__(self):

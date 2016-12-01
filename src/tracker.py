@@ -28,7 +28,7 @@ class Tracker:
         #chunks_number = config.getint('Description','chunks_count')
         for (id_chunk, chunk_hash) in config.items('chunks'):
             id_chunk = int(id_chunk)
-            self.chunks[id_chunk]=chunk_hash
+            self.chunks[id_chunk] = chunk_hash
         for (id_chunk_peer, peers) in config.items('chunks_peer'):
             id_chunk_peer = int(id_chunk_peer)
             list_peers = peers.split(',')
