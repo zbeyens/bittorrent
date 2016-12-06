@@ -7,7 +7,7 @@ from cfg_peers import *
 # ALICE, BOB, TRACKER
 
 
-class Client():
+class Client:
 
     def __init__(self):
         # NOTE: use cfg_peers
@@ -30,16 +30,20 @@ class Client():
             self.Packets.send(self.socket, version, 6,
                               len(msg_body), msg_body.encode())
 
-            msg_header = self.socket.recv(4)
+            msg_header = self.socket.recv(8)
+
+            if len(msg_header) == 0:
+                self.socket.close()
+                break
+
             # test
             msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
                 self.socket, msg_header)
 
             # test, should send GET_CHUNK
             self.Packets.send(self.socket, version, GET_CHUNK,
-                              msg_length, msg_body.encode())
+                              msg_length, msg_body)
 
-        self.socket.close()
 
 if __name__ == '__main__':
     Client()
