@@ -1,10 +1,10 @@
-from lib.client import Client
+from lib.server import Server
 
 
 class Bob:
 
     def __init__(self):
-        Client('bob')
+        Server('bob')
 
 
 if __name__ == '__main__':
