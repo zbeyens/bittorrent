@@ -1,33 +1,21 @@
-import binascii
 from ctypes import *
 import struct
-import configparser
 from lib.packets import Packets
 from lib.cfg_peers import CfgPeers
 from lib.server import Server
+from lib.cfg_chunks import CfgChunks
+
 
 class Tracker:
-
     def __init__(self):
         cfg = CfgPeers()
+        cfg2 = CfgChunks()
         self.ip_address_peers = cfg.read_config_peers_all()
+        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
         self.read_config_chunks()
         msg = self.get_fileinfo()
 
-    def read_config_chunks(self):
-        self.chunks = {}
-        self.chunks_peers = {}
-        config = configparser.ConfigParser()
-        config.read(chunks_path)
-        self.filename = config.get('description', 'filename')
-        self.chunks_count = config.getint('Description','chunks_count')
-        for (id_chunk, chunk_hash) in config.items('chunks'):
-            id_chunk = int(id_chunk)
-            self.chunks[id_chunk] = binascii.a2b_hex(chunk_hash)
-        for (id_chunk_peer, peers) in config.items('chunks_peer'):
-            id_chunk_peer = int(id_chunk_peer)
-            list_peers = peers.split(',')
-            self.chunks_peers[id_chunk_peer] = list_peers
+
 
     def get_fileinfo (self):
         filename_length = len(self.filename)

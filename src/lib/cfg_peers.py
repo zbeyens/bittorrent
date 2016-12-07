@@ -6,8 +6,6 @@ root_path = os.path.join(os.path.dirname(
 config_path = os.path.join(root_path, 'config')
 peers_path = os.path.join(config_path, 'peers.ini')
 
-# for Alice/Bob and Charlie 1
-
 
 class CfgPeers:
     # for Alice/Bob and Charlie 1
