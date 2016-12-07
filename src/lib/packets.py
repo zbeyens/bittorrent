@@ -36,9 +36,13 @@ class Packets():
         msg_type = CHUNK
         chunk_content_pad = (4 - chunk_content_length % 4) % 4
         # 2 + 5 + 1 + n
-        msg_length = 8 + (chunk_content_length + chunk_content_pad) / 4
-        print(len(chunk_hash.encode('utf-8')))
-        # msg_body = pack('<')
+        msg_length = 8 + (chunk_content_length + chunk_content_pad) // 4
+        msg_body = pack('<')
+        msg_body += pack('B' * 20, *chunk_hash)
+        msg_body += pack('I', chunk_content_length)
+        msg_body = pack('%dB' % chunk_content_length, *chunk_content)
+        msg_body += pack('%dx' % chunk_content_pad)
+        self.send(sock, version, msg_type, msg_length, msg_body)
 
     def recv(self, client, msg_header):
         # recv 8 bytes
