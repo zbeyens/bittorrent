@@ -8,6 +8,7 @@ import binascii
 
 chunks_path = os.path.join(root_path, 'chunks')
 
+
 class Peer(Server):
 
     def __init__(self, user):
