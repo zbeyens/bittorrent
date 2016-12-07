@@ -54,7 +54,7 @@ class Packets():
     #     else:
     #         client.recv(msg_length)
 
-    def check_format(self, msg_version, msg_type, msg_length, msg_body):
+    def check_format(self, msg_version, msg_type):
         # NOTE: is it enough?
         if (msg_type >= 0 and msg_type <= 6) and msg_version == version:
             return True
