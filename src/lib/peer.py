@@ -15,18 +15,17 @@ class Peer(Server):
         Peer.__init__(self, user)
         print('Done')
 
-    def check_chunk(self, chunk_hash):
-        chunk_path = os.path.join(chunks_path, self.user, chunk_hash + '.bin')
+    def check_chunk(self, filename):
+        chunk_path = os.path.join(chunks_path, self.user, filename + '.bin')
         if not os.path.exists(chunk_path):
             return False
         else:
             return True
 
-    def read_chunk(self, chunk_hash):
-        chunk_path = os.path.join(chunks_path, self.user, chunk_hash + '.bin')
+    def read_chunk(self, filename):
+        chunk_path = os.path.join(chunks_path, self.user, filename + '.bin')
         chunk_content_length = os.path.getsize(chunk_path)
         chunk_content = ''
-        print(chunk_content_length)
         with open(chunk_path, 'rb') as cf:
             chunk_content = cf.read(chunk_content_length)
         return chunk_content_length, chunk_content
@@ -58,9 +57,8 @@ class Peer(Server):
                     self.Packets.sendError(client, INVALID_REQUEST)
                     print('ERROR: INVALID_REQUEST')
                 else:
-                    chunk_hash = binascii.hexlify(msg_body)
-                    print(chunk_hash)
-                    chunk_found = self.check_chunk(chunk_hash)
+                    filename = binascii.hexlify(msg_body).decode()
+                    chunk_found = self.check_chunk(filename)
                     if chunk_found is False:
                         # • If the chunk cannot be found (look to the directory
                         # content), they will send back an
@@ -73,10 +71,10 @@ class Peer(Server):
                         # Appendix D.6) message with the content
                         # obtained from the file.
                         chunk_content_length, chunk_content = self.read_chunk(
-                            chunk_hash)
+                            filename)
                         self.Packets.sendChunk(
-                            client, chunk_hash, chunk_content_length, chunk_content)
-                        return False
+                            client, msg_body, chunk_content_length, chunk_content)
+                return False
             else:
                 print('Client disconnected with ' +
                       address[0] + ':' + str(address[1]))
