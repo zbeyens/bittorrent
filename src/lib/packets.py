@@ -40,7 +40,7 @@ class Packets():
         msg_body = pack('<')
         msg_body += pack('B' * 20, *chunk_hash)
         msg_body += pack('I', chunk_content_length)
-        msg_body = pack('%dB' % chunk_content_length, *chunk_content)
+        msg_body += pack('%dB' % chunk_content_length, *chunk_content)
         msg_body += pack('%dx' % chunk_content_pad)
         self.send(sock, version, msg_type, msg_length, msg_body)
 

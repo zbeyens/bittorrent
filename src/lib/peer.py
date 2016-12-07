@@ -30,7 +30,6 @@ class Peer(Server):
             chunk_content = cf.read(chunk_content_length)
         return chunk_content_length, chunk_content
 
-
     def start_socket(self, client, address):
         while 1:
             # recv the header to know the length the body
