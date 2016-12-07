@@ -1,11 +1,8 @@
-import sys
 import binascii
-import bytearray
 from lib.packets import Packet
 from ctypes import *
 import struct
 import configparser
-from socket import *
 from lib.packets import *
 from lib.cfg import *
 from lib.server import Server
