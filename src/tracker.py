@@ -1,31 +1,18 @@
 import binascii
-from lib.packets import Packet
 from ctypes import *
 import struct
 import configparser
-from lib.packets import *
-from lib.cfg import *
+from lib.packets import Packets
+from lib.cfg_peers import CfgPeers
 from lib.server import Server
 
 class Tracker:
 
     def __init__(self):
-        self.read_config_peers()
+        cfg = CfgPeers()
+        self.ip_address_peers = cfg.read_config_peers_all()
         self.read_config_chunks()
         msg = self.get_fileinfo()
-        self.create_socket()
-        self.bind()
-        Packet.send(self.sock,'1','3',len(msg),msg)
-
-    def read_config_peers(self):
-        config_p = configparser.ConfigParser()
-        config_p.read(peers_path)
-        self.ports_peers = {}
-        self.ip_address_peers = {}
-        for each_section in config_p.sections():
-            p = config_p.getint(each_section,'port_number')
-            i = config_p.get(each_section,'ip_address')
-            self.ip_address_peers[each_section] = (i, p)
 
     def read_config_chunks(self):
         self.chunks = {}
@@ -82,6 +69,4 @@ class Tracker:
 
 class ServerTracker(Server):
     def __init__(self):
-        pass
-
-
+        Server.__init__(self,'tracker')

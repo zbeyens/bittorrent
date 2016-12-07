@@ -2,19 +2,17 @@ import sys
 from socket import *
 from lib.packets import *
 from lib.cfg_peers import *
+from lib.server import Server
 import binascii
 import threading
 
 chunks_path = os.path.join(root_path, 'chunks')
 
 
-class Peer:
+class Peer(Server):
 
     def __init__(self, user):
-        cfg_peers = CfgPeers()
-        self.user = user
-        self.ip_address, self.port_number = cfg_peers.read_config_peers(user)
-        self.create_socket()
+        Peer.__init__(self, user)
         print('Done')
 
     def check_chunk(self, chunk_hash):
@@ -33,27 +31,6 @@ class Peer:
             chunk_content = cf.read(chunk_content_length)
         return chunk_content_length, chunk_content
 
-    def create_socket(self):
-        self.socket = socket(AF_INET, SOCK_STREAM)
-        # Include IP headers
-        self.socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        self.socket.bind((self.ip_address, self.port_number))
-        self.listen_socket()
-
-    def listen_socket(self):
-        self.Packets = Packets()
-        print('Listening on port', self.port_number)
-        self.socket.listen(10)
-        while True:
-            client, address = self.socket.accept()
-            print('Client connected with ' +
-                  address[0] + ':' + str(address[1]))
-            # timeout after 60 seconds of inactivity
-            # client.settimeout(60)
-            th = threading.Thread(target=self.start_socket,
-                                  args=(client, address))
-            th.daemon = True
-            th.start()
 
     def start_socket(self, client, address):
         while 1:
