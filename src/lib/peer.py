@@ -4,7 +4,7 @@ from lib.packets import *
 from lib.cfg_peers import *
 from lib.server import Server
 import binascii
-import threading
+
 
 chunks_path = os.path.join(root_path, 'chunks')
 
