@@ -1,8 +1,8 @@
 from socket import *
 from lib.packets import *
 from lib.cfg_peers import *
-import binascii
 import threading
+
 
 class Server:
     def __init__(self,server_name):
@@ -33,4 +33,5 @@ class Server:
             th.daemon = True
             th.start()
 
-
+    def start_socket(self):
+        pass
