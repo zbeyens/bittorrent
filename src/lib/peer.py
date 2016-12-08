@@ -1,9 +1,9 @@
-import sys
+import binascii
 from socket import *
 from lib.packets import *
 from lib.cfg_peers import *
 from lib.server import Server
-import binascii
+
 
 
 

@@ -1,4 +1,5 @@
 import sys
+from lib.client import *
 
 if len(sys.argv) < 2:
     print('Error: missing step number')
@@ -15,7 +16,7 @@ elif step == 2:
     """
     Step 2
     """
-    Client('tracker')
+    ClientV2('tracker')
 elif step == 3:
     """
     Step 3

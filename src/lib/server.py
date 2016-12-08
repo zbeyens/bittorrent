@@ -1,6 +1,6 @@
 from socket import *
-from lib.packets import *
-from lib.cfg_peers import *
+from packets import *
+from cfg_peers import *
 import threading
 
 

@@ -1,5 +1,6 @@
 from ctypes import *
 import struct
+from math import *
 from lib.packets import Packets
 from lib.cfg_peers import CfgPeers
 from lib.server import Server
@@ -51,15 +52,21 @@ class Tracker:
         for i in range(len(self.chunks_peers)):
             l += 8*len(self.chunks_peers[i])
         return l
+    def length_in_dwords(self):
+        L = self.message_length()
+        D = ceil((L+8)/4)
+        return D
+
 
 
 class ServerTracker(Server):
     def __init__(self):
-        Server.__init__(self,'tracker')
-        self.tracker= Tracker()
+        self.tracker = Tracker()
         self.version = 1
         self.type = 3
-        self.length = self.tracker.message_length()
+        self.length = self.tracker.length_in_dwords()
+        Server.__init__(self,'tracker')
+
     def start_socket(self, client, address):
         while 1:
             #recv the header to know the length the body
@@ -67,10 +74,6 @@ class ServerTracker(Server):
             if msg_header:
                 msg_version, msg_type, msg_length, msg_body = self.Packets.recv(client, msg_header)
                 if self.Packets.check_format(msg_version, msg_type) is False:
-                    # • If the request is malformed (invalid message format),
-                    # they will send back an ERROR (see
-                    # Appendix D.7) message with the error code
-                    # INVALID_MESSAGE_FORMAT.
                     self.Packets.sendError(client, INVALID_MESSAGE_FORMAT)
                     print('ERROR: INVALID_MESSAGE_FORMAT')
                 elif self.Packets.check_request_GET_FILE_INFO(self, msg_type) is False:
