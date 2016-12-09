@@ -5,10 +5,12 @@ import threading
 
 
 class Server:
-    def __init__(self,server_name):
+
+    def __init__(self, server_name):
         cfg_peers = CfgPeers()
         self.server_name = server_name
-        self.ip_address, self.port_number = cfg_peers.read_config_peers(server_name)
+        self.ip_address, self.port_number = cfg_peers.read_config_peers(
+            server_name)
         self.create_socket()
 
     def create_socket(self):

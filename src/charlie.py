@@ -6,12 +6,14 @@ if len(sys.argv) < 2:
     sys.exit(1)
 step = int(sys.argv[1])
 
+
 if step == 1:
     """
     Step 1
     Creation of the client Charlie that will download chunks of a file from 2 peers: Alice and Bob.
     """
-    ClientV1('Alice')
+
+
 elif step == 2:
     """
     Step 2
