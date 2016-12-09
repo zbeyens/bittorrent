@@ -13,7 +13,6 @@ class Tracker:
         cfg2 = CfgChunks()
         self.ip_address_peers = cfg.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
-        self.read_config_chunks()
         self.msg = self.get_fileinfo()
         self.msg_2 = self.get_file_info_2()
 
@@ -61,14 +60,15 @@ class Tracker:
             l += 8*len(self.chunks_peers[i])
 
         return l
+
     def length_in_dwords(self):
         L = self.message_length()
         D = ceil((L+8)/4)
         return D
 
 
-
 class ServerTracker(Server):
+
     def __init__(self):
         self.tracker = Tracker()
         self.version = 1
@@ -77,22 +77,23 @@ class ServerTracker(Server):
         Server.__init__(self,'tracker')
 
     def start_socket(self, client, address):
-        while 1:
-            #recv the header to know the length the body
-            msg_header = client.recv(8)
-            if msg_header:
-                msg_version, msg_type, msg_length, msg_body = self.Packets.recv(client, msg_header)
-                if self.Packets.check_format(msg_version, msg_type) is False:
-                    self.Packets.sendError(client, INVALID_MESSAGE_FORMAT)
-                    print('ERROR: INVALID_MESSAGE_FORMAT')
-                elif self.Packets.check_request_GET_FILE_INFO(self, msg_type) is False:
-                    self.Packets.sendError(client, INVALID_REQUEST)
-                    print('ERROR: INVALID_REQUEST')
+        try:
+            while 1:
+                #recv the header to know the length the body
+                msg_header = client.recv(8)
+                if msg_header:
+                    msg_version, msg_type, msg_length, msg_body = self.Packets.recv(client, msg_header)
+                    if self.Packets.check_format(msg_version, msg_type) is False:
+                        self.Packets.sendError(client, INVALID_MESSAGE_FORMAT)
+                        print('ERROR: INVALID_MESSAGE_FORMAT')
+                    elif self.Packets.check_request_GET_FILE_INFO(self, msg_type) is False:
+                        self.Packets.sendError(client, INVALID_REQUEST)
+                        print('ERROR: INVALID_REQUEST')
+                    else:
+                        self.Packets.send(self, self.sock, self.version, self.type, self.length, self.tracker.msg_2)
                 else:
-                    self.Packets.send(self, self.sock, self.version, self.type, self.length, self.tracker.msg_2)
-                return False
-            else:
-                print('Client disconnected with ' +
-                      address[0] + ':' + str(address[1]))
-                client.close()
-                return False
+                    print('Client disconnected with ' +address[0] + ':' + str(address[1]))
+                    client.close()
+                    break
+        finally:
+            self.client.close()
