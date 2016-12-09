@@ -1,6 +1,6 @@
 from socket import *
-from packets import *
-from cfg_peers import *
+from lib.packets import *
+from lib.cfg_peers import *
 
 
 # ALICE, BOB, TRACKER
@@ -75,4 +75,3 @@ class ClientV2(Client):
 
 if __name__ == '__main__':
     Client()
->>>>>> > 2601f3b2c2d108cfe904ecb76be456b78316f7f6
