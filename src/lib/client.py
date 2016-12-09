@@ -6,9 +6,9 @@ from cfg_peers import *
 # ALICE, BOB, TRACKER
 class Client:
 
-    def __init__(self, serverName):
+    def __init__(self, clientName):
         cfg = cfgPeers()
-        self.ip_address, self.port_number = cfg.read_config_peers(serverName)
+        self.ip_address, self.port_number = cfg.read_config_peers(clientName)
 
     def create_socket(self):
         self.Packets = Packets()
@@ -20,9 +20,8 @@ class Client:
 
 class ClientV1(Client):
 
-    def __init__(self, peer):
-        # NOTE: use cfg_peers
-        Client.__init__(peer)
+    def __init__(self, clientName):
+        Client.__init__(clientName)
         self.create_socket()
 
     def start_socket(self):
@@ -75,4 +74,3 @@ class ClientV2(Client):
 
 if __name__ == '__main__':
     Client()
->>>>>> > 2601f3b2c2d108cfe904ecb76be456b78316f7f6

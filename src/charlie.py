@@ -12,7 +12,7 @@ if step == 1:
     Creation of client Charlie (downloads chunks of a file from 2 peers: Alice and Bob).
     """
 
-    Charlie('alice')
+    Charlie()
 
 
 elif step == 2:
@@ -29,8 +29,9 @@ else:
     sys.exit(1)
 
 
-class Charlie(Client):
+class Charlie(ClientV1):
 
-    def __init__(self, user):
+    def __init__(self):
+        ClientV1.__init__(self, 'charlie')
         print(self.ip_address)
         print(port_number)
