@@ -19,7 +19,7 @@ elif step == 2:
     """
     Step 2
     """
-    Client('tracker')
+    ClientV2('tracker')
 elif step == 3:
     """
     Step 3

@@ -1,10 +1,10 @@
-from lib.server import Server
+from lib.peer import Peer
 
 
-class Alice:
+class Alice(Peer):
 
     def __init__(self):
-        Server('alice')
+        Peer.__init__(self, 'alice')
 
 
 if __name__ == '__main__':
