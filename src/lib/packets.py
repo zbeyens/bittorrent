@@ -70,3 +70,9 @@ class Packets():
             return True
         else:
             return False
+
+    def check_request_GET_FILE_INFO(self, msg_type):
+        if (msg_type == GET_FILE_INFO):
+            return True
+        else:
+            return False

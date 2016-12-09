@@ -17,7 +17,7 @@ class CfgChunks:
         config = configparser.ConfigParser()
         config.read(chunks_path)
         filename = config.get('description', 'filename')
-        chunks_count = config.getint('Description','chunks_count')
+        chunks_count = config.getint('Description', 'chunks_count')
         for (id_chunk, chunk_hash) in config.items('chunks'):
             id_chunk = int(id_chunk)
             chunks[id_chunk] = binascii.a2b_hex(chunk_hash)
@@ -25,7 +25,7 @@ class CfgChunks:
             id_chunk_peer = int(id_chunk_peer)
             list_peers = peers.split(',')
             chunks_peers[id_chunk_peer] = list_peers
-        return (chunks,chunks_peers,chunks_count,filename)
+        return (chunks, chunks_peers, chunks_count, filename)
 
 if __name__ == '__main__':
     CfgChunks()
