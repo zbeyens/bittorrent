@@ -49,10 +49,10 @@ class Peer(Server):
                     # they will send back an ERROR (see
                     # Appendix D.7) message with the error code
                     # INVALID_MESSAGE_FORMAT.
-                    self.Packets.sendError(client, INVALID_MESSAGE_FORMAT)
+                    self.Packets.send_error(client, INVALID_MESSAGE_FORMAT)
                     print('ERROR: INVALID_MESSAGE_FORMAT')
                 elif self.Packets.check_request(msg_type) is False:
-                    self.Packets.sendError(client, INVALID_REQUEST)
+                    self.Packets.send_error(client, INVALID_REQUEST)
                     print('ERROR: INVALID_REQUEST')
                 else:
                     filename = binascii.hexlify(msg_body).decode()
@@ -62,7 +62,7 @@ class Peer(Server):
                         # content), they will send back an
                         # ERROR (see Appendix D.7) message with the error code
                         # CHUNK_NOT_FOUND.
-                        self.Packets.sendError(client, CHUNK_NOT_FOUND)
+                        self.Packets.send_error(client, CHUNK_NOT_FOUND)
                         print('ERROR: CHUNK_NOT_FOUND')
                     else:
                         # • Otherwise, they will send back a CHUNK (see
@@ -70,7 +70,7 @@ class Peer(Server):
                         # obtained from the file.
                         chunk_content_length, chunk_content = self.read_chunk(
                             filename)
-                        self.Packets.sendChunk(
+                        self.Packets.send_chunk(
                             client, msg_body, chunk_content_length, chunk_content)
                 return False
             else:
