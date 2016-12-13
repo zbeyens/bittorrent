@@ -6,14 +6,13 @@ if len(sys.argv) < 2:
     sys.exit(1)
 step = int(sys.argv[1])
 
+
 if step == 1:
     """
     Step 1
     Creation of client Charlie (downloads chunks of a file from 2 peers: Alice and Bob).
     """
-
     Charlie()
-
 
 elif step == 2:
     """
@@ -32,6 +31,6 @@ else:
 class Charlie(ClientV1):
 
     def __init__(self):
-        ClientV1.__init__(self, 'charlie')
+        ClientV1.__init__(self)
         print(self.ip_address)
         print(port_number)
