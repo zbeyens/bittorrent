@@ -1,28 +1,46 @@
 from socket import *
 from lib.packets import *
 from lib.cfg_peers import *
+from threading import *
 
 
 # ALICE, BOB, TRACKER
 class Client:
 
-    def __init__(self, serverName):
-        cfg = cfgPeers()
-        self.ip_address, self.port_number = cfg.read_config_peers(serverName)
+    def __init__(self):
+        cfg = CfgPeers()
+        cfg2 = CfgChunks()
+        self.peers_ip_port = cfg.read_config_peers_all()
+        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
+        self.read_config_chunks()
+        self.create_sockets()
+        self.start_sockets()
 
-    def create_socket(self):
+    def create_sockets(self):
         self.Packets = Packets()
-        self.socket = socket(AF_INET, SOCK_STREAM)
+        self.sockets = {}
+        for i in range(len(self.peers_ip_port)):
+            names = config_p.sections()
+
+            self.sockets[names[i]] = socket(AF_INET, SOCK_STREAM)
+            self.sockets[i].connect(
+                (self.peers_ip_port[i][0], self.peers_ip_port[i][1]))
         # NOTE: have to multithread (cf server.py)
-        self.socket.connect((self.ip_address, self.port_number))
-        self.start_socket()
+        # for i in range(len(self.peers_ip_port)):
+        #     th = threading.Thread(target=self.start_socket, args=(self.socket))
+        #     th.daemon = True
+        #     th.start()
+
+    def start_sockets(self, socket):
+        for i in range(len(self.chunks_peers)):
+
+    def
 
 
 class ClientV1(Client):
 
-    def __init__(self, peer):
-        # NOTE: use cfg_peers
-        Client.__init__(peer)
+    def __init__(self):
+        Client.__init__()
         self.create_socket()
 
     def start_socket(self):
