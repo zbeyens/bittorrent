@@ -135,3 +135,12 @@ class Packets():
             return True
         else:
             return False
+
+    def check_chunk(self, msg_type):
+        if msg_type == CHUNK_NOT_FOUND:
+            return False
+        elif msg_type == CHUNK:
+            return True
+        else:
+            print("Error: unable to check message for chunk delivery.")
+            return False
