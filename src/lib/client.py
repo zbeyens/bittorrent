@@ -1,6 +1,8 @@
 from socket import *
 from lib.packets import *
 from lib.cfg_peers import *
+from lib.cfg_chunks import *
+from merge_chunks import *
 from threading import *
 
 
@@ -8,64 +10,94 @@ from threading import *
 class Client:
 
     def __init__(self):
-        cfg = CfgPeers()
-        cfg2 = CfgChunks()
-        self.chunks_content = []
-        self.peerList = cfg.read_config_peers_all()
-        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
-        self.read_config_chunks()
+        cfg_peers = CfgPeers()
+        cfg_chunks = CfgChunks()
+        self.peerList = cfg_peers.read_config_peers_all()
+        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg_chunks.read_config_chunks()
         self.create_sockets()
         self.start_sockets()
+        self.write_chunks()
+        merge_chunks = MergeChunks()
 
     def create_sockets(self):
         self.Packets = Packets()
+        self.chunks_content = []
         self.sockets = {}
         for peer in self.peerList:
-            if peer = "tracker":
+            if peer == "tracker":
                 continue
             self.sockets[peer] = socket(AF_INET, SOCK_STREAM)
             self.sockets[peer].connect(
                 (self.peerList[peer][0], self.peerList[peer][1]))
-        # NOTE: have to multithread (cf server.py)
-        # for i in range(len(self.peerList)):
-        #     th = threading.Thread(target=self.start_socket, args=(self.socket))
-        #     th.daemon = True
-        #     th.start()
 
     def start_sockets(self):
+        ths = []
         for i in range(len(self.chunks)):
-            chk_hash = chunks[i]
-            chk_peers = chunks_peers[i]
-            for peer in chk_peers:
-                if self.get_chunk(peer, chk_hash) is False:
-                    break
+            self.start(i)
+            # th = Thread(target=self.start, args=[i])
+            # th.daemon = True
+            # th.start()
+            # ths.append(th)
+        # wait all the threads have finished
+        for t in ths:
+            t.join()
+        # ths = []
+        # th1 = Thread(target=self.start, args=[range(len(self.chunks) // 2)])
+        # th2 = Thread(target=self.start, args=[range(
+        #     len(self.chunks) // 2, len(self.chunks))])
+        #
+        # th1.daemon = True
+        # th1.start()
+        # ths.append(th1)
+        # th2.daemon = True
+        # th2.start()
+        # ths.append(th2)
+        # # wait all the threads have finished
+        # for t in ths:
+        #     t.join()
 
-    def get_chunk(self, peer, chk_hash):
+    def start(self, i):
+        chunk_hash = self.chunks[i]
+        chunk_peers = self.chunks_peers[i]
+        for peer in chunk_peers:
+            print('\n' + str(i), peer)
+            if self.get_chunk(peer, chunk_hash) is True:
+                break
+
+    def get_chunk(self, peer, chunk_hash):
         sock = self.sockets[peer]
-        self.Packets.send_get_chunk(sock, chk_hash)
+        # req
+        self.Packets.send_get_chunk(sock, chunk_hash)
+        print('Sent:', binascii.hexlify(chunk_hash).decode())
+
+        # res
         msg_header = sock.recv(8)
         if len(msg_header) == 0:
             sock.close()
             return False
         msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
             sock, msg_header)
+
         if self.Packets.check_chunk(msg_type) is True:
-            body = unpack("<20BI", msg_body[:24])
-            chunk_hash = body[0]
-            chunk_content_length = body[1]
-            body = unpack("<20BI%dB" % chunk_content_length,
-                          msg_body[:24 + chunk_content_length])
-            self.chunks_content.append(body[2])
+            rchunk_hash, chunk_content = self.Packets.handle_chunk(msg_body)
+            self.chunks_content.append((rchunk_hash, chunk_content))
             return True
         else:
+            self.Packets.handle_error(msg_body)
             return False
 
+    def write_chunks(self):
+        for chunk in self.chunks_content:
+            chunk_path = os.path.join(
+                chunks_path, 'charlie', chunk[0] + '.bin')
+            with open(chunk_path, 'wb') as cf:
+                cf.write(chunk[1])
 
-class ClientV1(Client):
+
+class Client1(Client):
 
     def __init__(self):
-        Client.__init__()
-        self.create_socket()
+        Client.__init__(self)
 
     def start_socket(self):
 
@@ -113,7 +145,3 @@ class ClientV2(Client):
             # test
             msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
                 self.socket, msg_header)
-
-
-if __name__ == '__main__':
-    Client()

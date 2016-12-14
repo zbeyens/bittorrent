@@ -1,4 +1,5 @@
 from struct import *
+import binascii
 
 version = 1
 
@@ -17,13 +18,25 @@ CHUNK_NOT_FOUND = 2
 
 class Packets():
 
-    def recv(self, client, msg_header):
+    def recv(self, sock, msg_header):
         # recv 8 bytes
         msg_version, msg_type, msg_length = unpack('<BB2xI', msg_header)
         body_length = (msg_length - 2) * 4
         # recv n bytes
-        msg_body = client.recv(body_length)
+        msg_body = self.recvall(sock, body_length)
+        print('Received:', msg_version, msg_type, msg_length)
         return msg_version, msg_type, msg_length, msg_body
+
+    def recvall(self, sock, n):
+        # Packets sent can be divided: we could need multiple recv
+        # Helper function to recv n bytes or return None if EOF is hit
+        msg_body = ''.encode()
+        while len(msg_body) < n:
+            packet = sock.recv(n - len(msg_body))
+            if not packet:
+                return None
+            msg_body += packet
+        return msg_body
 
     def send(self, sock, msg_version, msg_type, msg_length, msg_body):
         msg_header = pack('<BB2xI', msg_version, msg_type, msg_length)
@@ -58,22 +71,24 @@ class Packets():
         msg_type = FILE_INFO
 
         filename_length = len(filename)
-        msg_body = struct.pack("<HH%ds" % filename_length, chunks_count,
-                               filename_length, filename.encode("utf-8"))
-        if filename_length % 4 != 0:
-            pad_length = (4 - filename_length % 4) % 4
-            msg_body += struct.pack("%dx" % pad_length)
+        pad_length = (4 - filename_length % 4) % 4
+        msg_body = pack("<HH%ds" % filename_length, chunks_count,
+                        filename_length, filename.encode("utf-8"))
+        msg_body += pack("%dx" % pad_length)
+
         for i in range(len(chunks)):
             chunk_hash = chunks[i]
             peers = chunks_peers[i]
             peers_count = len(peers)
-            msg_body += struct.pack('<20BHxx', *chunk_hash, peers_count)
+            msg_body += pack('<20B', *chunk_hash)
+            msg_body += pack('Hxx', peers_count)
+            # msg_body += pack
             for peer in peers:
                 ip_address = peers_info[peer][0]
                 port_number = peers_info[peer][1]
-                msg_body += struct.pack('4B', *(int(x)
-                                                for x in ip_address.split('.')))
-                msg_body += struct.pack('<Hxx', port_number)
+                msg_body += pack('4B', *(int(x)
+                                         for x in ip_address.split('.')))
+                msg_body += pack('<Hxx', port_number)
 
         length = 0
         length += 8 + 4 + filename_length + pad_length
@@ -93,6 +108,10 @@ class Packets():
         msg_body += pack('B' * 20, *chunk_hash)
         self.send(sock, version, msg_type, msg_length, msg_body)
 
+    def handle_get_chunk(self, msg_body):
+        filename = binascii.hexlify(msg_body).decode()
+        return filename
+
     # D.6 - Peer
     def send_chunk(self, sock, chunk_hash, chunk_content_length, chunk_content):
         msg_type = CHUNK
@@ -104,7 +123,18 @@ class Packets():
         msg_body += pack('I', chunk_content_length)
         msg_body += pack('%dB' % chunk_content_length, *chunk_content)
         msg_body += pack('%dx' % chunk_content_pad)
+        print('CHUNK sent:', len(msg_body))
         self.send(sock, version, msg_type, msg_length, msg_body)
+
+    def handle_chunk(self, msg_body):
+        body = unpack("<20BI", msg_body[:24])
+        rchunk_hash = binascii.hexlify(bytearray(body[:20])).decode()
+        chunk_content_length = body[20]
+        body = unpack("<%dB" % chunk_content_length,
+                      msg_body[24:24 + chunk_content_length])
+        chunk_content = bytearray(body)
+        print('CHUNK')
+        return rchunk_hash, chunk_content
 
     # D.7 Peer - Tracker
     def send_error(self, sock, err):
@@ -113,6 +143,15 @@ class Packets():
         msg_length = 3
         msg_body = pack('<H2x', err)
         self.send(sock, version, msg_type, msg_length, msg_body)
+
+    def handle_error(self, msg_body):
+        body = unpack('<H', msg_body[:2])
+        if body[0] == INVALID_MESSAGE_FORMAT:
+            print('INVALID_MESSAGE_FORMAT')
+        elif body[0] == INVALID_REQUEST:
+            print('INVALID_REQUEST')
+        elif body[0] == CHUNK_NOT_FOUND:
+            print('CHUNK_NOT_FOUND')
 
     # Check Formats:
     # Peer
@@ -136,11 +175,9 @@ class Packets():
         else:
             return False
 
+    # Charlie
     def check_chunk(self, msg_type):
-        if msg_type == CHUNK_NOT_FOUND:
+        if msg_type == ERROR:
             return False
-        elif msg_type == CHUNK:
-            return True
         else:
-            print("Error: unable to check message for chunk delivery.")
-            return False
+            return True

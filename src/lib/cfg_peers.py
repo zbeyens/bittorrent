@@ -21,12 +21,9 @@ class CfgPeers:
     def read_config_peers_all(self):
         config_p = configparser.ConfigParser()
         config_p.read(peers_path)
-        ip_address_peers = {}
-        for each_section in config_p.sections():
-            p = config_p.getint(each_section, 'port_number')
-            i = config_p.get(each_section, 'ip_address')
-            ip_address_peers[each_section] = (i, p)
-        return ip_address_peers
-
-if __name__ == '__main__':
-    CfgPeers()
+        peers_info = {}
+        for peer in config_p.sections():
+            p = config_p.getint(peer, 'port_number')
+            i = config_p.get(peer, 'ip_address')
+            peers_info[peer] = (i, p)
+        return peers_info

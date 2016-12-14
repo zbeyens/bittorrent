@@ -1,16 +1,15 @@
 from socket import *
-from packets import *
-from cfg_peers import *
+from lib.cfg_peers import *
 import threading
 
 
 class Server:
 
-    def __init__(self, server_name):
+    def __init__(self):
         cfg_peers = CfgPeers()
-        self.server_name = server_name
         self.ip_address, self.port_number = cfg_peers.read_config_peers(
-            server_name)
+            self.user)
+        # self.user in tracker!
         self.create_socket()
 
     def create_socket(self):
@@ -21,7 +20,6 @@ class Server:
         self.listen_socket()
 
     def listen_socket(self):
-        self.Packets = Packets()
         print('Listening on port', self.port_number)
         self.socket.listen(10)
         while True:

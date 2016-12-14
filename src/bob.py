@@ -4,7 +4,8 @@ from lib.peer import Peer
 class Bob(Peer):
 
     def __init__(self):
-        Peer.__init__(self, 'bob')
+        self.user = 'bob'
+        Peer.__init__(self)
 
 
 if __name__ == '__main__':
