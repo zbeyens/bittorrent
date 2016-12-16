@@ -1,1 +1,0 @@
-head -c 512 < /dev/urandom > files/512.txt
