@@ -136,6 +136,33 @@ class Packets():
         print('CHUNK')
         return rchunk_hash, chunk_content
 
+    def handle_file_info(self,msg_body):
+        chunks_count = unpack("H",msg_body[0:2])
+        filename_length = unpack("H",msg_body[2:4])
+        filename = unpack ("<%ds" % filename_length, msg_body[4:4 + filename_length])
+        n = 4 + filename_length
+        pad_length = 0
+        if filename_length%4 != 0:
+            pad_length = 4 - filename_length%4
+        n += pad_length
+        chunks_info = {}
+        for i in range(chunks_count):
+            chunk_hash_b = unpack("<20B",msg_body[n:n+20]); n += 20
+            chunk_hash = binascii.hexlify(bytearray(chunk_hash_b)).decode()
+            peers_count = unpack("H", msg_body[n:n+2]);n+=4
+            peers_info = []
+            for j in  range(peers_count):
+                ip_adress_brut = unpack("<4B",msg_body[n:n+4]);n+4
+                ip_adress = ".".join(ip_adress_brut)
+                port_number = unpack("H",msg_body[n:n+2]);n+4
+                peers_info[j] = (ip_adress,port_number)
+            chunks_info[i] =(chunk_hash,peers_info)
+        return filename, chunks_info
+
+
+
+
+
     # D.7 Peer - Tracker
     def send_error(self, sock, err):
         msg_type = ERROR
