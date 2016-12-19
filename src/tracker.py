@@ -113,6 +113,7 @@ class Tracker(Server):
                 else:
                     self.Packets.send_tracker_info(self.UDPSock,
                         self.own_ip_address, self.own_port_number, self.tracker_name_length, self.tracker_name, addr)
+                    self.UDPSock.close()
                     break
 
         else:
