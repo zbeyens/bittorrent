@@ -2,12 +2,10 @@ import sys
 from lib.client import *
 from tracker import *
 
+
 class Charlie(Client1):
 
     def __init__(self):
-        #Client1.__init__(self)
-        # print(self.ip_address)
-        # print(port_number)
         if len(sys.argv) < 2:
             print('Error: missing step number')
             sys.exit(1)

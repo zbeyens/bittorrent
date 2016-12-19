@@ -23,40 +23,24 @@ class Client:
             if peer == "tracker":
                 continue
             self.sockets[peer] = socket(AF_INET, SOCK_STREAM)
-            print((self.peerList[peer][0], self.peerList[peer][1]))
             self.sockets[peer].connect(
                 (self.peerList[peer][0], self.peerList[peer][1]))
+            print('\nConnected to', (self.peerList[
+                  peer][0], self.peerList[peer][1]))
 
     def start_sockets(self):
-        ths = []
         for i in range(len(self.chunks)):
             self.start(i)
-            # th = Thread(target=self.start, args=[i])
-            # th.daemon = True
-            # th.start()
-            # ths.append(th)
-        # wait all the threads have finished
-        for t in ths:
-            t.join()
-        # ths = []
-        # th1 = Thread(target=self.start, args=[range(len(self.chunks) // 2)])
-        # th2 = Thread(target=self.start, args=[range(
-        #     len(self.chunks) // 2, len(self.chunks))])
-        #
-        # th1.daemon = True
-        # th1.start()
-        # ths.append(th1)
-        # th2.daemon = True
-        # th2.start()
-        # ths.append(th2)
-        # # wait all the threads have finished
-        # for t in ths:
-        #     t.join()
+        # end
+        for peer in self.peerList:
+            if peer == "tracker":
+                continue
+            self.sockets[peer].close()
+            print('TCP-' + peer + ' socket closed')
 
     def start(self, i):
         chunk_hash = self.chunks[i]
         chunk_peers = self.chunks_peers[i]
-        print ('ham', chunk_peers)
         for peer in chunk_peers:
             print('\n' + str(i), peer)
             if self.get_chunk(peer, chunk_hash) is True:
@@ -99,36 +83,39 @@ class Client1(Client):
         cfg_chunks = CfgChunks()
         self.peerList = cfg_peers.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg_chunks.read_config_chunks()
-        print('ham2',self.chunks_peers)
         Client.__init__(self)
 
+
 class Client2(Client):
+
     def __init__(self):
         self.filename = ''
         self.chunks_info = 0
         self.create_socket()
         self.start_socket()
-        self.peerList,self.chunks,self.chunks_peers, self.chunks_count = self.parse_info()
+        self.peerList, self.chunks, self.chunks_peers, self.chunks_count = self.parse_info()
         Client.__init__(self)
 
     def create_socket(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
-        print('connected to',self.ip_address,'on port',self.port_number)
+        print('\nConnected to tracker:', self.ip_address,
+              'on port', self.port_number)
         self.socket.connect((self.ip_address, self.port_number))
+
     def start_socket(self):
         self.Packets.send_get_file_info(self.socket)
-        print('sent get_fileinfo')
+        print('Sent GET_FILE_INFO')
         msg_header = self.socket.recv(8)
         if len(msg_header) == 0:
             self.socket.close()
             return False
             # test
-        print('header:',msg_header)
-        msg_version, msg_type, msg_length, msg_body = self.Packets.recv(self.socket, msg_header)
-        self.filename, self.chunks_info = self.Packets.handle_file_info(msg_body)
-        print ("receive fileinfo-> filename = ",self.filename)
+        msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
+            self.socket, msg_header)
+        self.filename, self.chunks_info = self.Packets.handle_file_info(
+            msg_body)
         self.socket.close()
-        print("socket closed")
+        print("TCP-tracker socket closed")
 
     def parse_info(self):
         peers_set = {}
@@ -136,7 +123,7 @@ class Client2(Client):
         chunks_peers = {}
         if len(self.chunks_info) != 0:
             i = 0
-            j=0
+            j = 0
             for chunk in self.chunks_info:
                 chunks[i] = chunk[0]
                 peers = chunk[1]
@@ -145,40 +132,45 @@ class Client2(Client):
                 for peer in peers:
                     if peer not in peers_set.values():
                         peers_set[str(j)] = peer
-                        j+=1
+                        j += 1
                 for peer in peers_set:
                     if peers_set[peer] in peers:
                         chunks_peers[i].append(peer)
                 i += 1
-        return peers_set,chunks,chunks_peers,len(chunks)
+        return peers_set, chunks, chunks_peers, len(chunks)
 
 
 class Client21(Client2):
+
     def __init__(self):
         cfg = CfgPeers()
         self.Packets = Packets()
         self.ip_address, self.port_number = cfg.read_config_peers('tracker')
         Client2.__init__(self)
 
+
 class Client3(Client2):
+
     def __init__(self):
-        self.addr = ('<broadcast>',9000)
+        self.addr = ('<broadcast>', 9000)
         self.Packets = Packets()
         self.broadcasting()
         Client2.__init__(self)
+
     def broadcasting(self):
 
         self.sock = socket(AF_INET, SOCK_DGRAM)
         self.sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.Packets.send_discover_tracker(self.sock, self.addr)
-        print('discovertracker sending')
-        msg_header, addr2= self.sock.recvfrom(8)
-        print(msg_header)
+        print('Discovering the tracker...', self.addr)
+        msg_header, addr2 = self.sock.recvfrom(8)
         if len(msg_header) == 0:
             self.sock.close()
             return False
             # test
-        msg_version, msg_type, msg_length, msg_body = self.Packets.recvfrom(self.sock,msg_header)
-        self.ip_address, self.port_number, self.tracker_name, self.tracker_name_length = self.Packets.handle_tracker_info(msg_body)
+        msg_version, msg_type, msg_length, msg_body = self.Packets.recvfrom(
+            self.sock, msg_header)
+        self.ip_address, self.port_number, self.tracker_name, self.tracker_name_length = self.Packets.handle_tracker_info(
+            msg_body)
         self.sock.close()
-        print("socket closed")
+        print("UDP-broadcast socket closed")
