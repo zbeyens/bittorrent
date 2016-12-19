@@ -21,7 +21,7 @@ class Packets():
 
     def recv(self, sock, msg_header):
         # recv 8 bytes
-        msg_version, msg_type, msg_length = unpack('<BB2xI', msg_header)
+        msg_version, msg_type, osef, msg_length = unpack('!BBhI', msg_header)
         body_length = (msg_length - 2) * 4
         # recv n bytes
         msg_body = self.recvall(sock, body_length)
@@ -29,7 +29,7 @@ class Packets():
         return msg_version, msg_type, msg_length, msg_body
 
     def recvfrom(self, sock, msg_header):
-        msg_version, msg_type, msg_length = unpack('<BB2xI', msg_header)
+        msg_version, msg_type, osef, msg_length = unpack('!BBhI', msg_header)
         body_length = (msg_length - 2) * 4
         msg_body = self.recvallfrom(sock, body_length)
         print('Received:', msg_version, msg_type, msg_length)
@@ -56,7 +56,7 @@ class Packets():
         return msg_body
 
     def send(self, sock, msg_version, msg_type, msg_length, msg_body):
-        msg_header = pack('<BB2xI', msg_version, msg_type, msg_length)
+        msg_header = pack('!BBhI', msg_version, msg_type, 0, msg_length)
 
         # send 8 bytes
         sock.send(msg_header)
@@ -65,7 +65,7 @@ class Packets():
             sock.send(msg_body)
 
     def sendto(self, sock, msg_version, msg_type, msg_length, msg_body, addr):
-        msg_header = pack('<BB2xI', msg_version, msg_type, msg_length)
+        msg_header = pack('!BBhI', msg_version, msg_type, 0, msg_length)
 
         # send 8 bytes
         sock.sendto(msg_header, addr)
@@ -82,14 +82,13 @@ class Packets():
 
     # D.2 Tracker 3
     def send_tracker_info(self, sock, ip_address, port_number, tracker_name_length, tracker_name, addr):
-        msg_body = pack('<')
-        msg_body += pack('4B', *(int(x) for x in ip_address.split('.')))
-        msg_body += pack('H', port_number)
-        msg_body += pack('H', tracker_name_length)
+        msg_body = pack('!4B', *(int(x) for x in ip_address.split('.')))
+        msg_body += pack('!H', port_number)
+        msg_body += pack('!H', tracker_name_length)
         pad_length = (4 - tracker_name_length % 4) % 4
-        msg_body += pack('%ds' % tracker_name_length,
+        msg_body += pack('!%ds' % tracker_name_length,
                          tracker_name.encode("utf-8"))
-        msg_body += pack('%dx' % pad_length)
+        msg_body += pack('!%dx' % pad_length)
         msg_type = TRACKER_INFO
         msg_length = math.ceil(len(msg_body) / 4) + 2
         self.sendto(sock, version, msg_type, msg_length, msg_body, addr)
@@ -103,10 +102,10 @@ class Packets():
         print('Sent GET_FILE_INFO')
 
     def handle_tracker_info(self, msg_body):
-        ip_adress_brut = unpack('4B', msg_body[0:4])
+        ip_adress_brut = unpack('!4B', msg_body[0:4])
         ip_address = self.table2ip(ip_adress_brut)
-        port_number, tracker_name_length = unpack('<HH', msg_body[4:8])
-        tracker_nameb = unpack('%ds' % tracker_name_length, msg_body[
+        port_number, tracker_name_length = unpack('!HH', msg_body[4:8])
+        tracker_nameb = unpack('!%ds' % tracker_name_length, msg_body[
                                8:8 + tracker_name_length])
         tracker_name = tracker_nameb[0].decode()
         print('Tracker info:', ip_address, port_number,
@@ -119,27 +118,26 @@ class Packets():
 
         filename_length = len(filename)
         pad_length = (4 - filename_length % 4) % 4
-        msg_body = pack('<')
-        msg_body += pack('H', chunks_count)
-        msg_body += pack('H', filename_length)
-        msg_body += pack('%ds' % filename_length, filename.encode("utf-8"))
-        msg_body += pack('%dx' % pad_length)
+        msg_body = pack('!H', chunks_count)
+        msg_body += pack('!H', filename_length)
+        msg_body += pack('!%ds' % filename_length, filename.encode("utf-8"))
+        msg_body += pack('!%dx' % pad_length)
 
         for i in range(chunks_count):
             chunk_hash = chunks[i]
             peers = chunks_peers[i]
             peers_count = len(peers)
-            msg_body += pack('20B', *chunk_hash)
-            msg_body += pack('H', peers_count)
-            msg_body += pack('xx')
+            msg_body += pack('!20B', *chunk_hash)
+            msg_body += pack('!H', peers_count)
+            msg_body += pack('!xx')
             # msg_body += pack
             for peer in peers:
                 ip_address = peers_info[peer][0]
                 port_number = peers_info[peer][1]
-                msg_body += pack('4B', *(int(x)
-                                         for x in ip_address.split('.')))
-                msg_body += pack('H', port_number)
-                msg_body += pack('xx')
+                msg_body += pack('!4B', *(int(x)
+                                          for x in ip_address.split('.')))
+                msg_body += pack('!H', port_number)
+                msg_body += pack('!xx')
 
         msg_length = len(msg_body)
         msg_length = math.ceil(msg_length / 4) + 2
@@ -152,8 +150,7 @@ class Packets():
         msg_type = GET_CHUNK
         # 2 + 5
         msg_length = 7
-        msg_body = pack('<')
-        msg_body += pack('B' * 20, *chunk_hash)
+        msg_body = pack('!' + 'B' * 20, *chunk_hash)
         self.send(sock, version, msg_type, msg_length, msg_body)
         print('Sent GET_CHUNK:', binascii.hexlify(chunk_hash).decode())
 
@@ -167,28 +164,27 @@ class Packets():
         chunk_content_pad = (4 - chunk_content_length % 4) % 4
         # 2 + 5 + 1 + n
         msg_length = 8 + (chunk_content_length + chunk_content_pad) // 4
-        msg_body = pack('<')
-        msg_body += pack('B' * 20, *chunk_hash)
-        msg_body += pack('I', chunk_content_length)
-        msg_body += pack('%dB' % chunk_content_length, *chunk_content)
-        msg_body += pack('%dx' % chunk_content_pad)
+        msg_body = pack('!' + 'B' * 20, *chunk_hash)
+        msg_body += pack('!I', chunk_content_length)
+        msg_body += pack('!%dB' % chunk_content_length, *chunk_content)
+        msg_body += pack('!%dx' % chunk_content_pad)
         self.send(sock, version, msg_type, msg_length, msg_body)
         print('Sent CHUNK:', binascii.hexlify(
             chunk_hash).decode(), len(msg_body))
 
     def handle_chunk(self, msg_body):
 
-        body = unpack("<20BI", msg_body[:24])
+        body = unpack("!20BI", msg_body[:24])
         rchunk_hash = binascii.hexlify(bytearray(body[:20])).decode()
         chunk_content_length = body[20]
-        body = unpack("<%dB" % chunk_content_length,
+        body = unpack("!%dB" % chunk_content_length,
                       msg_body[24:24 + chunk_content_length])
         chunk_content = bytearray(body)
         return rchunk_hash, chunk_content
 
     def handle_file_info(self, msg_body):
 
-        chunks_count, filename_length = unpack('<HH', msg_body[0:4])
+        chunks_count, filename_length = unpack('!HH', msg_body[0:4])
         pad_length = (4 - filename_length % 4) % 4
         filename = unpack('%ds' % filename_length,
                           msg_body[4:4 + filename_length])
@@ -197,18 +193,18 @@ class Packets():
         n += pad_length
         chunks_info = []
         for i in range(chunks_count):
-            chunk_hash_b = unpack('20B', msg_body[n:n + 20])
+            chunk_hash_b = unpack('!20B', msg_body[n:n + 20])
             n += 20
             chunk_hash = bytearray(chunk_hash_b)
-            peers_count = unpack('H', msg_body[n:n + 2])
+            peers_count = unpack('!H', msg_body[n:n + 2])
             n += 4
             peers_count = peers_count[0]
             peers_info = []
             for j in range(peers_count):
-                ip_adress_brut = unpack('4B', msg_body[n:n + 4])
+                ip_adress_brut = unpack('!4B', msg_body[n:n + 4])
                 n += 4
                 ip_address = self.table2ip(ip_adress_brut)
-                port_number = unpack('H', msg_body[n:n + 2])
+                port_number = unpack('!H', msg_body[n:n + 2])
                 n += 4
                 port_number = port_number[0]
                 peers_info.append((ip_address, port_number))
@@ -230,11 +226,11 @@ class Packets():
         msg_type = ERROR
         # 2 + 1
         msg_length = 3
-        msg_body = pack('<H2x', err)
+        msg_body = pack('!H2x', err)
         self.send(sock, version, msg_type, msg_length, msg_body)
 
     def handle_error(self, msg_body):
-        body = unpack('<H', msg_body[:2])
+        body = unpack('!H', msg_body[:2])
         if body[0] == INVALID_MESSAGE_FORMAT:
             print('INVALID_MESSAGE_FORMAT')
         elif body[0] == INVALID_REQUEST:
@@ -246,7 +242,7 @@ class Packets():
         msg_type = ERROR
         # 2 + 1
         msg_length = 3
-        msg_body = pack('<H2x', err)
+        msg_body = pack('!H2x', err)
         self.sendto(sock, version, msg_type, msg_length, msg_body, addr)
     # Check Formats:
     # Peer

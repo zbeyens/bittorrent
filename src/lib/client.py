@@ -143,7 +143,10 @@ class Client21(Client2):
     def __init__(self):
         cfg = CfgPeers()
         self.Packets = Packets()
-        self.ip_address, self.port_number = cfg.read_config_peers('tracker')
+        # self.ip_address, self.port_number = cfg.read_config_peers('tracker')
+        # print(self.ip_address, self.port_number)
+        self.ip_address = '164.15.76.104'
+        self.port_number = 8000
         Client2.__init__(self)
 
 
