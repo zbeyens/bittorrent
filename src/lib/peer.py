@@ -33,8 +33,6 @@ class Peer(Server):
                     print('ERROR: INVALID_REQUEST')
                 else:
                     filename = self.Packets.handle_get_chunk(msg_body)
-                    print('GET_CHUNK:', msg_version,
-                          msg_type, msg_length, filename)
 
                     chunk_found = self.check_chunk(filename)
                     if chunk_found is False:

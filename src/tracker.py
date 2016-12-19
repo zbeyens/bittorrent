@@ -82,12 +82,9 @@ class Tracker(Server):
                 else:
                     self.Packets.send_file_info(
                         client, self.chunks_count, self.filename, self.chunks, self.chunks_peers, self.peers_info)
-                    # self.Packets.send(
-                    # self, self.sock, self.version, self.type, self.length,
-                    # self.tracker.msg_2)
             else:
                 print('Client disconnected with ' +
-                      address[0] + ':' + str(address[1]))
+                      address[0] + ':' + str(address[1]) + '\n')
                 client.close()
                 return False
 if __name__ == '__main__':

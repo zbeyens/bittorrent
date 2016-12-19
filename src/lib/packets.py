@@ -78,6 +78,7 @@ class Packets():
         msg_type = DISCOVER_TRACKER
         msg_length = 2
         self.sendto(sock, version, msg_type, msg_length, 0, addr)
+        print('Sent DISCOVER_TRACKER')
 
     # D.2 Tracker 3
     def send_tracker_info(self, sock, ip_address, port_number, tracker_name_length, tracker_name, addr):
@@ -92,12 +93,14 @@ class Packets():
         msg_type = TRACKER_INFO
         msg_length = math.ceil(len(msg_body) / 4) + 2
         self.sendto(sock, version, msg_type, msg_length, msg_body, addr)
+        print('Sent TRACKER_INFO')
 
     # D.3 Charlie 2
     def send_get_file_info(self, sock):
         msg_type = GET_FILE_INFO
         msg_length = 2
         self.send(sock, version, msg_type, msg_length, 0)
+        print('Sent GET_FILE_INFO')
 
     def handle_tracker_info(self, msg_body):
         ip_adress_brut = unpack('4B', msg_body[0:4])
@@ -142,6 +145,7 @@ class Packets():
         msg_length = math.ceil(msg_length / 4) + 2
 
         self.send(sock, version, msg_type, msg_length, msg_body)
+        print('Sent FILE_INFO')
 
     # D.5 Charlie
     def send_get_chunk(self, sock, chunk_hash):
@@ -151,6 +155,7 @@ class Packets():
         msg_body = pack('<')
         msg_body += pack('B' * 20, *chunk_hash)
         self.send(sock, version, msg_type, msg_length, msg_body)
+        print('Sent GET_CHUNK:', binascii.hexlify(chunk_hash).decode())
 
     def handle_get_chunk(self, msg_body):
         filename = binascii.hexlify(msg_body).decode()
@@ -167,8 +172,9 @@ class Packets():
         msg_body += pack('I', chunk_content_length)
         msg_body += pack('%dB' % chunk_content_length, *chunk_content)
         msg_body += pack('%dx' % chunk_content_pad)
-        print('CHUNK sent:', len(msg_body))
         self.send(sock, version, msg_type, msg_length, msg_body)
+        print('Sent CHUNK:', binascii.hexlify(
+            chunk_hash).decode(), len(msg_body))
 
     def handle_chunk(self, msg_body):
 
@@ -178,7 +184,6 @@ class Packets():
         body = unpack("<%dB" % chunk_content_length,
                       msg_body[24:24 + chunk_content_length])
         chunk_content = bytearray(body)
-        print('CHUNK')
         return rchunk_hash, chunk_content
 
     def handle_file_info(self, msg_body):

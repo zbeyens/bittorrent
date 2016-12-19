@@ -50,7 +50,6 @@ class Client:
         sock = self.sockets[peer]
         # req
         self.Packets.send_get_chunk(sock, chunk_hash)
-        print('Sent:', binascii.hexlify(chunk_hash).decode())
 
         # res
         msg_header = sock.recv(8)
@@ -104,7 +103,6 @@ class Client2(Client):
 
     def start_socket(self):
         self.Packets.send_get_file_info(self.socket)
-        print('Sent GET_FILE_INFO')
         msg_header = self.socket.recv(8)
         if len(msg_header) == 0:
             self.socket.close()
