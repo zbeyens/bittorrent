@@ -72,16 +72,18 @@ class Tracker(Server):
     def __init__(self):
         cfg = CfgPeers()
         cfg2 = CfgChunks()
-
-        self.own_ip_address,self.own_port_number = cfg.read_config_peers('tracker')
+        self.Packets = Packets()
         self.tracker_name = 'tracker'
+        """
+        self.own_ip_address,self.own_port_number = cfg.read_config_peers('tracker')
+        '
         self.tracker_name_length = len(self.tracker_name)
 
         self.addr_broad =('<broadcast>',9000)
-        self.Packets = Packets()
+
         self.create_socket_udp()
         self.start_socket_udp()
-
+        """
         self.peers_info = cfg.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
         self.user = self.tracker_name
