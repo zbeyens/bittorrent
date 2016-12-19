@@ -1,6 +1,6 @@
 import sys
 from lib.client import *
-
+from tracker import *
 
 class Charlie(Client1):
 
@@ -25,11 +25,12 @@ class Charlie(Client1):
             """
             Step 2
             """
-            Client2()
+            Client21()
         elif step == 3:
             """
             Step 3
             """
+            Client3()
         else:
             print('Error: invalid step number')
             sys.exit(1)

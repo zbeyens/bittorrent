@@ -1,21 +1,12 @@
 from ctypes import *
 import struct
+from socket import *
 from math import *
-from lib.packets import Packets
-from lib.cfg_peers import CfgPeers
-from lib.server import Server
-from lib.cfg_chunks import CfgChunks
-
-
-class Tracker:
-
-    def __init__(self):
-        cfg = CfgPeers()
-        cfg2 = CfgChunks()
-        self.Packets = Packets()
-        self.peers_info = cfg.read_config_peers_all()
-        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
-        self.read_config_chunks()
+from lib.packets import *
+from lib.cfg_peers import *
+from lib.server import *
+from lib.cfg_chunks import *
+"""
         # self.msg = self.get_fileinfo()
         # self.msg_2 = self.get_file_info_2()
 
@@ -74,16 +65,62 @@ class Tracker:
     #     L = self.message_length()
     #     D = ceil((L + 8) / 4)
     #     return D
+"""
 
-
-class ServerTracker(Server):
+class Tracker(Server):
 
     def __init__(self):
-        self.tracker = Tracker()
-        # self.version = 1
-        # self.type = 3
-        # self.length = self.tracker.length_in_dwords()
-        Server.__init__(self, 'tracker')
+        cfg = CfgPeers()
+        cfg2 = CfgChunks()
+
+        self.own_ip_address,self.own_port_number = cfg.read_config_peers('tracker')
+        self.tracker_name = 'tracker'
+        self.tracker_name_length = len(self.tracker_name)
+
+        self.addr_broad =('<broadcast>',9000)
+        self.Packets = Packets()
+        self.create_socket_udp()
+        self.start_socket_udp()
+
+        self.peers_info = cfg.read_config_peers_all()
+        self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
+        self.user = self.tracker_name
+        Server.__init__(self)
+    def create_socket_udp(self):
+        self.UDPSock = socket(AF_INET,SOCK_DGRAM)
+        self.UDPSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self.UDPSock.setsockopt(SOL_SOCKET,SO_BROADCAST, 1)
+        print('socket created')
+        self.UDPSock.bind(('', 9000))
+        print('bind')
+    def start_socket_udp (self):
+        while True:
+            msg_header, addr = self.UDPSock.recvfrom(8)
+            print(' received header:',msg_header,addr)
+            print(msg_header,addr)
+            if msg_header:
+                msg_version, msg_type, msg_length, msg_body, addr = self.Packets.recvfrom(self.UDPSock, msg_header)
+                self.send_udp(msg_version, msg_type, msg_length, msg_body,addr)
+
+        else:
+            print('udp server disconnected')
+            self.UDPSock.close()
+            return False
+    def send_udp(self,msg_version, msg_type, msg_length, msg_body,addr):
+        self.sock_back = socket(AF_INET,SOCK_DGRAM)
+        self.sock_back.setsockopt(SOL_SOCKET,SO_BROADCAST, 1)
+
+        print('received tracker_info',msg_body)
+        if self.Packets.check_format(msg_version, msg_type) is False:
+            self.Packets.send_error_to(self.sock_back, INVALID_MESSAGE_FORMAT, addr)
+            print('ERROR: INVALID_MESSAGE_FORMAT')
+        elif self.Packets.check_request_tracker_info(msg_type) is False:
+            self.Packets.send_error_to(self.sock_back, INVALID_REQUEST,addr)
+            print('ERROR: INVALID_REQUEST')
+        else:
+            self.Packets.send_tracker_info(self.sock_back,
+                self.own_ip_address, self.own_port_number, self.tracker_name_length, self.tracker_name, addr)
+
 
     def start_socket(self, client, address):
         while 1:
@@ -92,21 +129,22 @@ class ServerTracker(Server):
             if msg_header:
                 msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
                     client, msg_header)
+                print('header:',msg_header)
                 if self.Packets.check_format(msg_version, msg_type) is False:
                     self.Packets.send_error(client, INVALID_MESSAGE_FORMAT)
                     print('ERROR: INVALID_MESSAGE_FORMAT')
-                elif self.Packets.check_request_GET_FILE_INFO(self, msg_type) is False:
+                elif self.Packets.check_request_get_file_info(msg_type) is False:
                     self.Packets.send_error(client, INVALID_REQUEST)
                     print('ERROR: INVALID_REQUEST')
                 else:
-                    self.Packets.send_get_file_info(
-                        self.sock, self.chunks_count, self.filename, self.chunks, self.chunks_peers, self.peers_info)
+                    self.Packets.send_file_info(client, self.chunks_count, self.filename, self.chunks, self.chunks_peers, self.peers_info)
                     # self.Packets.send(
                     # self, self.sock, self.version, self.type, self.length,
                     # self.tracker.msg_2)
-                return False
             else:
                 print('Client disconnected with ' +
                       address[0] + ':' + str(address[1]))
                 client.close()
                 return False
+if __name__ == '__main__':
+    Tracker()

@@ -23,6 +23,7 @@ class Client:
             if peer == "tracker":
                 continue
             self.sockets[peer] = socket(AF_INET, SOCK_STREAM)
+            print((self.peerList[peer][0], self.peerList[peer][1]))
             self.sockets[peer].connect(
                 (self.peerList[peer][0], self.peerList[peer][1]))
 
@@ -55,6 +56,7 @@ class Client:
     def start(self, i):
         chunk_hash = self.chunks[i]
         chunk_peers = self.chunks_peers[i]
+        print ('ham', chunk_peers)
         for peer in chunk_peers:
             print('\n' + str(i), peer)
             if self.get_chunk(peer, chunk_hash) is True:
@@ -97,53 +99,96 @@ class Client1(Client):
         cfg_chunks = CfgChunks()
         self.peerList = cfg_peers.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg_chunks.read_config_chunks()
+        print('ham2',self.chunks_peers)
         Client.__init__(self)
 
-
 class Client2(Client):
-
     def __init__(self):
-        cfg = cfg_peers()
-        self.ip_address, self.port_number = cfg.read_config_peers('tracker')
+        self.filename = ''
+        self.chunks_info = 0
         self.create_socket()
         self.start_socket()
-        self.peerlist,self.chunks,self.chunks_peers, self.chunks_count = self.parse_info()
-        client.__init__(self)
+        self.peerList,self.chunks,self.chunks_peers, self.chunks_count = self.parse_info()
+        Client.__init__(self)
 
     def create_socket(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
-        self.socket.connect(self.ip_address, self.port_number)
+        self.socket.connect((self.ip_address, self.port_number))
+        print('connected to',self.ip_address,'on port',self.port_number)
     def start_socket(self):
-        while 1:
+        self.Packets.send_get_file_info(self.socket)
+        print('sent get_fileinfo')
+        msg_header = self.socket.recv(8)
+        if len(msg_header) == 0:
+            self.socket.close()
+            return False
             # test
-            self.Packets.send_get_file_info(self.socket)
-            msg_header = self.socket.recv(8)
-            if len(msg_header) == 0:
-                self.socket.close()
-                break
-            # test
-            msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
-                self.socket, msg_header)
-            self.filename, self.chunks_info = Packets.handle_file_info(msg_body)
-            print ("receive fileinfo-> filename = ",self.filename)
-        socket.close()
+        print('header:',msg_header)
+        msg_version, msg_type, msg_length, msg_body = self.Packets.recv(self.socket, msg_header)
+        print('body:',msg_body)
+        print ('File info received, length =', len(msg_body))
+        self.filename, self.chunks_info = self.Packets.handle_file_info(msg_body)
+        print ("receive fileinfo-> filename = ",self.filename)
+        self.socket.close()
         print("socket closed")
 
     def parse_info(self):
-        peerlist = []
         peers_set = {}
         chunks = {}
         chunks_peers = {}
         if len(self.chunks_info) != 0:
             i = 0
+            j=0
             for chunk in self.chunks_info:
-                peers = chunk[1]
                 chunks[i] = chunk[0]
-                chunks_peers[i] = peers
-                i += 1
+                peers = chunk[1]
+                chunks_peers[i] = []
+
                 for peer in peers:
-                    if peer not in peerlist:
-                        peerlist.append(peer)
-            for i in range(len(peerlist)):
-                peers_set[str(i)] = peerlist[i]
+                    if peer not in peers_set.values():
+                        peers_set[str(j)] = peer
+                        j+=1
+                for peer in peers_set:
+                    if peers_set[peer] in peers:
+                        chunks_peers[i].append(peer)
+                i += 1
         return peers_set,chunks,chunks_peers,len(chunks)
+
+
+class Client21(Client2):
+    def __init__(self):
+        cfg = CfgPeers()
+        self.Packets = Packets()
+        self.ip_address, self.port_number = cfg.read_config_peers('tracker')
+        Client2.__init__(self)
+
+class Client3(Client2):
+    def __init__(self):
+        self.addr = ('<broadcast>',9000)
+        self.Packets = Packets()
+        self.broadcasting()
+        Client2.__init__(self)
+    def broadcasting(self):
+        self.sock = socket(AF_INET, SOCK_DGRAM)
+        self.sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        self.Packets.send_discover_tracker(self.sock, self.addr)
+        print('discovertracker sending')
+        #print('socket created')
+        #print('ready to broadcast')
+        self.sock2 = socket(AF_INET, SOCK_DGRAM)
+        self.sock2.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        self.sock2.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self.sock2.bind(('', 9000))
+        #print('socket created')
+
+        msg_header, addr= self.sock2.recvfrom(8)
+        if len(msg_header) == 0:
+            self.socket.close()
+            return False
+            # test
+        print('header:',msg_header)
+        msg_version, msg_type, msg_length, msg_body, self.addr = self.Packets.recvfrom(msg_header)
+        print('body:',msg_body)
+        self.ip_address, self.port_number, self.tracker_name, self.tracker_name_length = self.Packets.handle_tracker_info(msg_body)
+        self.udpsock.close()
+        print("socket closed")
