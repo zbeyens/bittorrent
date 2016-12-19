@@ -25,7 +25,7 @@ class Tracker(Server):
         self.addr_broad = ('<broadcast>', 9000)
 
         self.create_socket_udp()
-        self.start_socket_udp()
+        # self.start_socket_udp()
 
         self.peers_info = cfg.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg2.read_config_chunks()
@@ -36,17 +36,18 @@ class Tracker(Server):
         self.UDPSock = socket(AF_INET, SOCK_DGRAM)
         self.UDPSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.UDPSock.bind(('', 9000))
-        print('socket created')
+        th = threading.Thread(target=self.start_socket_udp)
+        th.daemon = True
+        th.start()
+        print('UDP socket created')
 
     def start_socket_udp(self):
         while True:
             msg_header, addr = self.UDPSock.recvfrom(8)
-            print(' received header:', msg_header, addr)
-            print(msg_header, addr)
+            print('Received broadcast from', addr)
             if msg_header:
                 msg_version, msg_type, msg_length, msg_body = self.Packets.recvfrom(
                     self.UDPSock, msg_header)
-                print('type=', msg_type)
                 if self.Packets.check_format(msg_version, msg_type) is False:
                     self.Packets.send_error_to(
                         self.UDPSock, INVALID_MESSAGE_FORMAT, addr)
@@ -56,15 +57,14 @@ class Tracker(Server):
                         self.UDPSock, INVALID_REQUEST, addr)
                     print('ERROR: INVALID_REQUEST')
                 else:
-                    self.Packets.send_tracker_info(self.UDPSock,
-                                                   self.own_ip_address, self.own_port_number, self.tracker_name_length, self.tracker_name, addr)
-                    self.UDPSock.close()
-                    break
-
-        else:
-            print('udp server disconnected')
-            self.UDPSock.close()
-            return False
+                    self.Packets.send_tracker_info(
+                        self.UDPSock, self.own_ip_address, self.own_port_number, self.tracker_name_length, self.tracker_name, addr)
+                    # self.UDPSock.close()
+                    # break
+            else:
+                print('UDP-tracker-server closed')
+                self.UDPSock.close()
+                return False
 
     def start_socket(self, client, address):
         while 1:
@@ -73,7 +73,6 @@ class Tracker(Server):
             if msg_header:
                 msg_version, msg_type, msg_length, msg_body = self.Packets.recv(
                     client, msg_header)
-                print('header:', msg_header)
                 if self.Packets.check_format(msg_version, msg_type) is False:
                     self.Packets.send_error(client, INVALID_MESSAGE_FORMAT)
                     print('ERROR: INVALID_MESSAGE_FORMAT')
