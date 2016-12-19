@@ -31,21 +31,19 @@ class Packets():
     def recvfrom (self,sock,msg_header):
         msg_version, msg_type, msg_length = unpack('<BB2xI', msg_header)
         body_length = (msg_length - 2) * 4
-        msg_body, addr = self.recvallfrom(sock, body_length)
+        msg_body = self.recvallfrom(sock, body_length)
         print('Received:', msg_version, msg_type, msg_length)
-        return msg_version, msg_type, msg_length, msg_body, addr
+        return msg_version, msg_type, msg_length, msg_body
 
     def recvallfrom(self, sock, n):
         msg_body = ''.encode()
-        addr = ('',0)
-        while len(msg_body) <= n:
+        while len(msg_body) < n:
             print (msg_body)
             packet,addr = sock.recvfrom(n - len(msg_body))
             if not packet:
                 return None
             msg_body += packet
-        print (msg_body,addr)
-        return msg_body, addr
+        return msg_body
 
     def recvall(self, sock, n):
         # Packets sent can be divided: we could need multiple recv
@@ -69,7 +67,7 @@ class Packets():
 
     def sendto(self, sock, msg_version, msg_type, msg_length, msg_body,addr):
         msg_header = pack('<BB2xI', msg_version, msg_type, msg_length)
-
+        print ('hham', msg_header)
         # send 8 bytes
         sock.sendto(msg_header,addr)
         # send n bytes
@@ -173,6 +171,7 @@ class Packets():
         self.send(sock, version, msg_type, msg_length, msg_body)
 
     def handle_chunk(self, msg_body):
+        
         body = unpack("<20BI", msg_body[:24])
         rchunk_hash = binascii.hexlify(bytearray(body[:20])).decode()
         chunk_content_length = body[20]
@@ -279,7 +278,7 @@ class Packets():
             return True
     #tracker2
     def check_request_tracker_info(self, msg_type):
-        if (msg_type == TRACKER_INFO):
+        if (msg_type == DISCOVER_TRACKER):
             return True
         else:
             return False

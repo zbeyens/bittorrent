@@ -113,8 +113,8 @@ class Client2(Client):
 
     def create_socket(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
-        self.socket.connect((self.ip_address, self.port_number))
         print('connected to',self.ip_address,'on port',self.port_number)
+        self.socket.connect((self.ip_address, self.port_number))
     def start_socket(self):
         self.Packets.send_get_file_info(self.socket)
         print('sent get_fileinfo')
@@ -125,8 +125,6 @@ class Client2(Client):
             # test
         print('header:',msg_header)
         msg_version, msg_type, msg_length, msg_body = self.Packets.recv(self.socket, msg_header)
-        print('body:',msg_body)
-        print ('File info received, length =', len(msg_body))
         self.filename, self.chunks_info = self.Packets.handle_file_info(msg_body)
         print ("receive fileinfo-> filename = ",self.filename)
         self.socket.close()
@@ -169,26 +167,18 @@ class Client3(Client2):
         self.broadcasting()
         Client2.__init__(self)
     def broadcasting(self):
+
         self.sock = socket(AF_INET, SOCK_DGRAM)
         self.sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.Packets.send_discover_tracker(self.sock, self.addr)
         print('discovertracker sending')
-        #print('socket created')
-        #print('ready to broadcast')
-        self.sock2 = socket(AF_INET, SOCK_DGRAM)
-        self.sock2.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        self.sock2.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        self.sock2.bind(('', 9000))
-        #print('socket created')
-
-        msg_header, addr= self.sock2.recvfrom(8)
+        msg_header, addr2= self.sock.recvfrom(8)
+        print(msg_header)
         if len(msg_header) == 0:
-            self.socket.close()
+            self.sock.close()
             return False
             # test
-        print('header:',msg_header)
-        msg_version, msg_type, msg_length, msg_body, self.addr = self.Packets.recvfrom(msg_header)
-        print('body:',msg_body)
+        msg_version, msg_type, msg_length, msg_body = self.Packets.recvfrom(self.sock,msg_header)
         self.ip_address, self.port_number, self.tracker_name, self.tracker_name_length = self.Packets.handle_tracker_info(msg_body)
-        self.udpsock.close()
+        self.sock.close()
         print("socket closed")
