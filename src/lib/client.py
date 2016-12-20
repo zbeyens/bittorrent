@@ -4,6 +4,7 @@ from lib.cfg_peers import *
 from lib.cfg_chunks import *
 from merge_chunks import *
 from threading import *
+from create_chunks import *
 
 
 # ALICE, BOB, TRACKER
@@ -39,6 +40,7 @@ class Client:
 
     def start(self, i):
         chunk_hash = self.chunks[i]
+        print(chunk_hash)
         chunk_peers = self.chunks_peers[i]
         for peer in chunk_peers:
             print('\n' + str(i), peer)
@@ -94,7 +96,7 @@ class Client2(Client):
         self.start_socket()
         self.peerList, self.chunks, self.chunks_peers, self.chunks_count = self.parse_info()
         Client.__init__(self)
-        self.create_config_file
+        self.create_config_file()
         merge_chunks = MergeChunks()
 
     def create_socket(self):
@@ -145,11 +147,12 @@ class Client2(Client):
         config.set('description', 'filename', self.filename)
         config.set('description', 'chunks_count', str(len(self.chunks)))
         config.add_section('chunks')
-        for (i, chunk_hash) in enumerate(self.chunks):
+        for i in range(self.chunks_count):
+            chunk_hash = binascii.hexlify(bytearray(self.chunks[i])).decode()
             config.set('chunks', str(i), chunk_hash)
         config.add_section('chunks_peers')
-        for (i, peers) in enumerate(self.chunks_peers):
-            config.set('chunks_peers', str(i), ', '.join(peers))
+        for i in range(len(self.chunks_peers)):
+            config.set('chunks_peers', str(i), ', '.join(self.chunks_peers[i]))
         with open(os.path.join(config_path, 'file.ini'), 'w') as f:
             config.write(f)
 
