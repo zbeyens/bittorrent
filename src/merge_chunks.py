@@ -12,6 +12,7 @@ def chunk_path(chunk_hash):
 
 
 class MergeChunks:
+
     def __init__(self):
         self.read_config_file()
         if self.has_all_chunks():
@@ -25,7 +26,12 @@ class MergeChunks:
         config.read(os.path.join(config_path, 'file.ini'))
         self.filename = config.get('description', 'filename')
         chunks_count = config.getint('description', 'chunks_count')
-        self.chunks = [config.get('chunks', str(i)) for i in range(chunks_count)]
+        self.chunks = [config.get('chunks', str(i))
+                       for i in range(chunks_count)]
+
+    def tracker_config_file(self, filename, chunks):
+        self.filename = filename
+        self.chunks = chunks
 
     def has_all_chunks(self):
         for chunk_hash in self.chunks:

@@ -13,7 +13,6 @@ class Client:
         self.create_sockets()
         self.start_sockets()
         self.write_chunks()
-        merge_chunks = MergeChunks()
 
     def create_sockets(self):
         self.Packets = Packets()
@@ -83,6 +82,7 @@ class Client1(Client):
         self.peerList = cfg_peers.read_config_peers_all()
         self.chunks, self.chunks_peers, self.chunks_count, self.filename = cfg_chunks.read_config_chunks()
         Client.__init__(self)
+        merge_chunks = MergeChunks()
 
 
 class Client2(Client):
@@ -94,6 +94,8 @@ class Client2(Client):
         self.start_socket()
         self.peerList, self.chunks, self.chunks_peers, self.chunks_count = self.parse_info()
         Client.__init__(self)
+        self.create_config_file
+        merge_chunks = MergeChunks()
 
     def create_socket(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -136,6 +138,20 @@ class Client2(Client):
                         chunks_peers[i].append(peer)
                 i += 1
         return peers_set, chunks, chunks_peers, len(chunks)
+
+    def create_config_file(self):
+        config = configparser.ConfigParser()
+        config.add_section('description')
+        config.set('description', 'filename', self.filename)
+        config.set('description', 'chunks_count', str(len(self.chunks)))
+        config.add_section('chunks')
+        for (i, chunk_hash) in enumerate(self.chunks):
+            config.set('chunks', str(i), chunk_hash)
+        config.add_section('chunks_peers')
+        for (i, peers) in enumerate(self.chunks_peers):
+            config.set('chunks_peers', str(i), ', '.join(peers))
+        with open(os.path.join(config_path, 'file.ini'), 'w') as f:
+            config.write(f)
 
 
 class Client21(Client2):
